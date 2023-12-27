@@ -9,21 +9,7 @@
 #include <unistd.h>
 
 #include "movefiles.h"
-
-int
-startswith(char *prefix, char *str)
-{
-    int i, j;
-    char *p_prefix = prefix;
-
-    for (i = 0; *p_prefix++; i++);
-    for (j = 0; *str++ == *prefix++; j++);
-
-    if (i == j)
-        return 1;
-
-    return 0;
-}
+#include "utils.h"
 
 int
 movefile(char *src, char *dst)
@@ -52,13 +38,15 @@ movefile(char *src, char *dst)
     if (remove(src))
         res = errno;
 
+    printf("%s -> %s\n", src, dst);
+
     close(dstfile);
  clean:
     close(srcfile);
     return res;
 }
 
-void 
+void
 formatpaths(char *filename, char *src, char *dst, char **srcpath, char **dstpath)
 {
     *srcpath = malloc(strlen(src) + strlen(filename) + 2);
@@ -73,26 +61,33 @@ parsedir(DIR *dir, char *src, char **dst)
 {
     struct dirent *file;
     char **p_dst = dst;
-    char *srcpath, *dstpath;
+    char *buf, *srcpath, *dstpath;
     int res = 0;
 
     while ((file = readdir(dir))) {
         while (*p_dst) {
-            if (strcmp(*p_dst++, "ext")) 
+            if (strcmp(*p_dst, "ext")) 
                 break;
+            p_dst++;
 
-            if (!startswith(*p_dst++, file->d_name)) {
-                (*p_dst) && (p_dst += 2);
+            if (strncmp(*p_dst, file->d_name, strlen(*p_dst))) {
+                (*++p_dst) && (p_dst += 2);
                 continue;
             }
+            p_dst++;
 
-            if (!(*p_dst))
+            if (!*p_dst)
                 break;
 
-            if (strcmp(*p_dst++, "dir"))
+            if (strcmp(*p_dst, "dir"))
                 break;
+            p_dst++;
 
             formatpaths(file->d_name, src, *p_dst, &srcpath, &dstpath);
+            if (exphome(dstpath, &buf)) {
+                free(dstpath);
+                dstpath = buf;
+            }
 
             if (movefile(srcpath, dstpath))
                 res = errno;

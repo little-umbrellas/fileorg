@@ -9,3 +9,6 @@ fileorg: $(OBJ)
 
 $(OBJ): $(SRC)
 	$(CC) -c $^
+
+install: all
+	cp fileorg $(HOME)/.local/bin

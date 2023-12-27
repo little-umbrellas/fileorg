@@ -32,8 +32,6 @@ movetoHeader(FILE *stream, char *header)
     return 0;
 }
 
-#define TRAILING 2
-
 int
 gettagInfo(FILE *stream, char *tag, char **tagInfo)
 {
@@ -51,27 +49,25 @@ gettagInfo(FILE *stream, char *tag, char **tagInfo)
             p_buf++;
 
             *p_buf = '\0';
-            p_buf = buf;
 
             if (!strcmp(buf, tag))
                 isTag = 1;
 
             if ((c = fgetc(stream)) != EOF && c == '\n')
                 return 0;
-            nc -= TRAILING + 1;
 
-        } else if (c == '\n' && isTag) {
-            *(--p_buf) = '\0';
             p_buf = buf;
+            nc = 0;
+        } else if (c == '\n' && isTag) {
+            *--p_buf = '\0';
 
-            if (!(*p_buf))
+            if (!buf[0])
                 return 0;
 
             *tagInfo = malloc(nc + 1);
             strcpy(*tagInfo, buf);
 
             return 1;
-
         } else if (c == '\n') {
             p_buf = buf;
             nc = 0;
@@ -106,9 +102,8 @@ getblockInfo(FILE *stream, char ***blockInfo)
             p_buf++;
 
             *p_buf = '\0';
-            p_buf = buf;
 
-            if (!(*p_buf))
+            if (!buf[0])
                 return 0;
 
             tag = malloc(nc + 1);
@@ -117,18 +112,18 @@ getblockInfo(FILE *stream, char ***blockInfo)
 
             if ((c = fgetc(stream)) != EOF && c == '\n')
                 return 0;
-            nc -= TRAILING + 1;
 
-            nl++;
+            p_buf = buf;
+            nc = 0, nl++;
             isTag = 1;
         } else if (c == '\n' && isTag) {
-            *(--p_buf) = '\0';
-            p_buf = buf;
+            *--p_buf = '\0';
 
             tagInfo = malloc(nc + 1);
             strcpy(tagInfo, buf);
             *p_blockInfo++ = tagInfo;
 
+            p_buf = buf;
             nc = 0, nl++;
             isTag = 0;
         } else if (c == '\n') {
