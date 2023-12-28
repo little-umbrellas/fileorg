@@ -1,1 +1,1 @@
-int parsedir(DIR *dir, char *src, char **dst);
+int parsedirs(char **src, char **dst);

@@ -14,8 +14,7 @@ fileorg(void)
     const char confPath[] = "$HOME/.config/fileorg.conf";
     char *confFile;
     FILE *confStream;
-    char *buf, *srcDirname;
-    DIR *srcDir;
+    char **srcDirname, **p_srcDirname;
     char **dstDirname, **p_dstDirname;
 
     if (exphome(confPath, &confFile) == -1) {
@@ -33,18 +32,8 @@ fileorg(void)
         exit(EXIT_FAILURE);
     }
 
-    if (!gettagInfo(confStream, "dir", &srcDirname)) { 
-        fputs("ERR: No source directory\n", stderr);
-        exit(EXIT_FAILURE);
-    }
-
-    if (exphome(srcDirname, &buf)) {
-        free(srcDirname);
-        srcDirname = buf;
-    }
-
-    if (!(srcDir = opendir(srcDirname))) { 
-        fprintf(stderr, "ERR: Failed to open source directory: %s\n", strerror(errno));
+    if (!getblockInfo(confStream, &srcDirname)) {
+        fputs("ERR: Source block has invalid or no tags\n", stderr);
         exit(EXIT_FAILURE);
     }
 
@@ -53,25 +42,28 @@ fileorg(void)
         exit(EXIT_FAILURE);
     }
 
-    if (!getblockInfo(confStream, &dstDirname)) { 
-        fputs("ERR: Block has invalid or no tags\n", stderr);
+    if (!getblockInfo(confStream, &dstDirname)) {
+        fputs("ERR: Destination block has invalid or no tags\n", stderr);
         exit(EXIT_FAILURE);
     }
 
-    if (parsedir(srcDir, srcDirname, dstDirname)) {
-        fprintf(stderr, "ERR: Failed to move file: %s\n", strerror(errno));
+    if (parsedirs(srcDirname, dstDirname)) {
+        fprintf(stderr, "ERR: Failed to parse or move files: %s\n", strerror(errno));
         exit(EXIT_FAILURE);
     }
 
     free(confFile);
     fclose(confStream);
-    free(srcDirname);
-    closedir(srcDir);
 
     p_dstDirname = dstDirname;
     while (*p_dstDirname)
         free(*p_dstDirname++);
     free(dstDirname);
+
+    p_srcDirname = srcDirname;
+    while (*p_srcDirname)
+        free(*p_srcDirname++);
+    free(srcDirname);
 
 }
 

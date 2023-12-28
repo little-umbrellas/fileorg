@@ -57,45 +57,64 @@ formatpaths(char *filename, char *src, char *dst, char **srcpath, char **dstpath
 }
 
 int
-parsedir(DIR *dir, char *src, char **dst)
+parsedirs(char **src, char **dst)
 {
+    DIR *srcdir;
     struct dirent *file;
+    char *buf;
+    char **p_src = src;
     char **p_dst = dst;
-    char *buf, *srcpath, *dstpath;
+    char *srcpath, *dstpath;
     int res = 0;
 
-    while ((file = readdir(dir))) {
-        while (*p_dst) {
-            if (strcmp(*p_dst, "ext")) 
-                break;
-            p_dst++;
+    while (*p_src) {
+        if (strcmp(*p_src, "dir"))
+            break;
+        p_src++;
 
-            if (strncmp(*p_dst, file->d_name, strlen(*p_dst))) {
-                (*++p_dst) && (p_dst += 2);
-                continue;
-            }
-            p_dst++;
-
-            if (!*p_dst)
-                break;
-
-            if (strcmp(*p_dst, "dir"))
-                break;
-            p_dst++;
-
-            formatpaths(file->d_name, src, *p_dst, &srcpath, &dstpath);
-            if (exphome(dstpath, &buf)) {
-                free(dstpath);
-                dstpath = buf;
-            }
-
-            if (movefile(srcpath, dstpath))
-                res = errno;
-
-            free(srcpath);
-            free(dstpath);
+        if (exphome(*p_src, &buf)) {
+            free(*p_src);
+            *p_src = buf;
         }
-        p_dst = dst;
+
+        if (!(srcdir = opendir(*p_src)))
+            return errno;
+
+        while ((file = readdir(srcdir))) {
+            while (*p_dst) {
+                if (strcmp(*p_dst, "ext")) 
+                    break;
+                p_dst++;
+
+                if (strncmp(*p_dst, file->d_name, strlen(*p_dst))) {
+                    (*++p_dst) && (p_dst += 2);
+                    continue;
+                }
+                p_dst++;
+
+                if (!*p_dst)
+                    break;
+
+                if (strcmp(*p_dst, "dir"))
+                    break;
+                p_dst++;
+
+                formatpaths(file->d_name, *p_src, *p_dst, &srcpath, &dstpath);
+                if (exphome(dstpath, &buf)) {
+                    free(dstpath);
+                    dstpath = buf;
+                }
+
+                if (movefile(srcpath, dstpath))
+                    res = errno;
+
+                free(srcpath);
+                free(dstpath);
+            }
+            p_dst = dst;
+        }
+        closedir(srcdir);
+        p_src++;
     }
 
     return res;
