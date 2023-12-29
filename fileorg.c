@@ -4,9 +4,10 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "config.h"
 #include "parseconf.h"
 #include "movefiles.h"
-#include "utils.h"
+#include "exphome.h"
 
 void
 fileorg(void)
@@ -22,32 +23,35 @@ fileorg(void)
         exit(EXIT_FAILURE);
     }
 
-    if (!(confStream = fopen(confFile, "r"))) {
+;   if (!(confStream = fopen(confFile, "r"))) {
+        if (errno == ENOENT)
+            initconf(confFile);
+
         fprintf(stderr, "ERR: Failed to open config file: %s\n", strerror(errno));
         exit(EXIT_FAILURE);
     }
 
-    if (!movetoHeader(confStream, "Source")) {
+    if (!movetoHeader("Source", confStream)) {
         fputs("ERR: No source header\n", stderr);
         exit(EXIT_FAILURE);
     }
 
-    if (!getblockInfo(confStream, &srcDirname)) {
+    if (!getblockInfo(&srcDirname, confStream)) {
         fputs("ERR: Source block has invalid or no tags\n", stderr);
         exit(EXIT_FAILURE);
     }
 
-    if (!movetoHeader(confStream, "Destination")) {
+    if (!movetoHeader("Destination", confStream)) {
         fputs("ERR: No destination header\n", stderr);
         exit(EXIT_FAILURE);
     }
 
-    if (!getblockInfo(confStream, &dstDirname)) {
+    if (!getblockInfo(&dstDirname, confStream)) {
         fputs("ERR: Destination block has invalid or no tags\n", stderr);
         exit(EXIT_FAILURE);
     }
 
-    if (parsedirs(srcDirname, dstDirname)) {
+    if (!parsedirs(srcDirname, dstDirname)) {
         fprintf(stderr, "ERR: Failed to parse or move files: %s\n", strerror(errno));
         exit(EXIT_FAILURE);
     }
@@ -55,22 +59,20 @@ fileorg(void)
     free(confFile);
     fclose(confStream);
 
-    p_dstDirname = dstDirname;
-    while (*p_dstDirname)
-        free(*p_dstDirname++);
-    free(dstDirname);
-
     p_srcDirname = srcDirname;
     while (*p_srcDirname)
         free(*p_srcDirname++);
     free(srcDirname);
 
+    p_dstDirname = dstDirname;
+    while (*p_dstDirname)
+        free(*p_dstDirname++);
+    free(dstDirname);
 }
 
 int
 main(void)
 {
     fileorg();
-
     return 0;
 }

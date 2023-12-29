@@ -1,0 +1,1 @@
+void initconf(char *file);

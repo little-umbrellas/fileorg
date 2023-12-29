@@ -9,7 +9,7 @@
 #include <unistd.h>
 
 #include "movefiles.h"
-#include "utils.h"
+#include "exphome.h"
 
 int
 movefile(char *src, char *dst)
@@ -17,29 +17,28 @@ movefile(char *src, char *dst)
     struct stat metadata;
     ssize_t filesize;
     int srcfile, dstfile;
-    int res = 0;
+    int res = 0, sent = 0;
 
     if (stat(src, &metadata))
-        return errno;
+        return 0;
 
     filesize = metadata.st_size;
 
     if ((srcfile = open(src, O_RDONLY)) == -1)
-        res = errno;
+        return 0;
 
-    if ((dstfile = open(dst, O_WRONLY|O_CREAT|O_EXCL, 0644)) == -1) {
-        res = errno;
+    if ((dstfile = open(dst, O_WRONLY|O_CREAT|O_EXCL, 0644)) == -1)
         goto clean;
-    } 
 
-    while (res < filesize)
-        res = sendfile(dstfile, srcfile, 0, filesize);
+    while (sent < filesize)
+        sent = sendfile(dstfile, srcfile, 0, filesize);
 
     if (remove(src))
-        res = errno;
+        goto clean;
 
     printf("%s -> %s\n", src, dst);
 
+    res = 1;
     close(dstfile);
  clean:
     close(srcfile);
@@ -61,15 +60,14 @@ parsedirs(char **src, char **dst)
 {
     DIR *srcdir;
     struct dirent *file;
-    char *buf;
+    char *buf = NULL;
     char **p_src = src;
     char **p_dst = dst;
     char *srcpath, *dstpath;
-    int res = 0;
 
     while (*p_src) {
         if (strcmp(*p_src, "dir"))
-            break;
+            return 1;
         p_src++;
 
         if (exphome(*p_src, &buf)) {
@@ -78,7 +76,7 @@ parsedirs(char **src, char **dst)
         }
 
         if (!(srcdir = opendir(*p_src)))
-            return errno;
+            return 0;
 
         while ((file = readdir(srcdir))) {
             while (*p_dst) {
@@ -105,8 +103,8 @@ parsedirs(char **src, char **dst)
                     dstpath = buf;
                 }
 
-                if (movefile(srcpath, dstpath))
-                    res = errno;
+                if (!movefile(srcpath, dstpath))
+                    return 0;
 
                 free(srcpath);
                 free(dstpath);
@@ -117,5 +115,5 @@ parsedirs(char **src, char **dst)
         p_src++;
     }
 
-    return res;
+    return 1;
 }

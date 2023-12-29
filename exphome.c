@@ -2,6 +2,8 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "exphome.h"
+
 int
 exphome(const char *path, char **exp)
 {

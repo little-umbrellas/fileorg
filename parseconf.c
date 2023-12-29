@@ -7,7 +7,7 @@
 #define BUF_SIZE 8192
 
 int
-movetoHeader(FILE *stream, char *header)
+movetoHeader(char *header, FILE *stream)
 {
     char c;
     char buf[BUF_SIZE], *p_buf = buf;
@@ -33,55 +33,7 @@ movetoHeader(FILE *stream, char *header)
 }
 
 int
-gettagInfo(FILE *stream, char *tag, char **tagInfo)
-{
-    char c;
-    char buf[BUF_SIZE], *p_buf = buf;
-    int isTag = 0;
-
-    for (int nc = 1; nc <= BUF_SIZE && (c = fgetc(stream)) != EOF && (*p_buf++ = c); nc++) {
-        if (c == '=' && !isTag) {
-            *p_buf = '\0';
-            p_buf -= 2, nc--;
-
-            while (*p_buf == ' ' || *p_buf == '\t')
-                p_buf--, nc--;
-            p_buf++;
-
-            *p_buf = '\0';
-
-            if (!strcmp(buf, tag))
-                isTag = 1;
-
-            if ((c = fgetc(stream)) != EOF && c == '\n')
-                return 0;
-
-            p_buf = buf;
-            nc = 0;
-        } else if (c == '\n' && isTag) {
-            *--p_buf = '\0';
-
-            if (!buf[0])
-                return 0;
-
-            *tagInfo = malloc(nc + 1);
-            strcpy(*tagInfo, buf);
-
-            return 1;
-        } else if (c == '\n') {
-            p_buf = buf;
-            nc = 0;
-        } else if (c == '[') {
-            fseek(stream, -1L, SEEK_CUR);
-            break;
-        }
-    }
-
-    return 0;
-}
-
-int
-getblockInfo(FILE *stream, char ***blockInfo)
+getblockInfo(char ***blockInfo, FILE *stream)
 {
     int nc, nl;
     char c;

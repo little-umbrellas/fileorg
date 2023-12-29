@@ -1,3 +1,2 @@
-int movetoHeader(FILE *stream, char *header);
-int gettagInfo(FILE *stream, char *tag, char **tagInfo);
-int getblockInfo(FILE *stream, char ***blockInfo);
+int movetoHeader(char *header, FILE *stream);
+int getblockInfo(char ***blockInfo, FILE *stream);
