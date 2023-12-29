@@ -60,14 +60,14 @@ parsedirs(char **src, char **dst)
 {
     DIR *srcdir;
     struct dirent *file;
-    char *buf = NULL;
+    char *buf;
     char **p_src = src;
     char **p_dst = dst;
     char *srcpath, *dstpath;
 
     while (*p_src) {
         if (strcmp(*p_src, "dir"))
-            return 1;
+            return 0;
         p_src++;
 
         if (exphome(*p_src, &buf)) {
@@ -80,7 +80,7 @@ parsedirs(char **src, char **dst)
 
         while ((file = readdir(srcdir))) {
             while (*p_dst) {
-                if (strcmp(*p_dst, "ext")) 
+                if (strcmp(*p_dst, "ext"))
                     break;
                 p_dst++;
 
