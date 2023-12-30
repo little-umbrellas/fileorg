@@ -19,28 +19,29 @@ movefile(char *src, char *dst)
     int srcfile, dstfile;
     int res = 0, sent = 0;
 
-    if (stat(src, &metadata))
-        return 0;
-
-    filesize = metadata.st_size;
-
     if ((srcfile = open(src, O_RDONLY)) == -1)
         return 0;
 
-    if ((dstfile = open(dst, O_WRONLY|O_CREAT|O_EXCL, 0644)) == -1)
-        goto clean;
+    if (fstat(srcfile, &metadata))
+        goto closesrc;
 
-    while (sent < filesize)
+    filesize = metadata.st_size;
+
+    if ((dstfile = open(dst, O_WRONLY|O_CREAT|O_EXCL, 0644)) == -1)
+        goto closesrc;
+
+    while (sent > -1 && sent < filesize)
         sent = sendfile(dstfile, srcfile, 0, filesize);
 
     if (remove(src))
-        goto clean;
+        goto closeall;
 
     printf("%s -> %s\n", src, dst);
 
     res = 1;
+ closeall:
     close(dstfile);
- clean:
+ closesrc:
     close(srcfile);
     return res;
 }
@@ -103,8 +104,12 @@ parsedirs(char **src, char **dst)
                     dstpath = buf;
                 }
 
-                if (!movefile(srcpath, dstpath))
+                if (!movefile(srcpath, dstpath)) {
+                    free(srcpath);
+                    free(dstpath);
+                    closedir(srcdir);
                     return 0;
+                }
 
                 free(srcpath);
                 free(dstpath);
