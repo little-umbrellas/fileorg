@@ -23,9 +23,9 @@ fileorg(void)
         exit(EXIT_FAILURE);
     }
 
-;   if (!(confStream = fopen(confFile, "r"))) {
-        if (errno == ENOENT)
-            initconf(confFile);
+    if (!(confStream = fopen(confFile, "r"))) {
+        if (errno == ENOENT && initconf(confFile)) 
+            exit(EXIT_SUCCESS);
 
         fprintf(stderr, "ERR: Failed to open config file: %s\n", strerror(errno));
         exit(EXIT_FAILURE);

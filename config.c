@@ -46,15 +46,15 @@ writeconf(FILE *stream)
     writetag(DIRTAG, stream);
 }
 
-void
+int
 initconf(char *file)
 {
     FILE *stream;
 
     if (!(stream = fopen(file, "w")))
-        exit(EXIT_FAILURE);
+        return 0;
 
     writeconf(stream);
 
-    exit(EXIT_SUCCESS);
+    return 1;
 }

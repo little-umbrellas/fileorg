@@ -1,1 +1,1 @@
-void initconf(char *file);
+int initconf(char *file);
