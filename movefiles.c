@@ -19,6 +19,11 @@ movefile(char *src, char *dst)
     int srcfile, dstfile;
     int res = 0, sent = 0;
 
+    if (!rename(src, dst)) {
+        printf("renamed '%s' -> '%s'\n", src, dst);
+        return 1;
+    }
+
     if ((srcfile = open(src, O_RDONLY)) == -1)
         return 0;
 
@@ -36,7 +41,7 @@ movefile(char *src, char *dst)
     if (remove(src))
         goto closeall;
 
-    printf("%s -> %s\n", src, dst);
+    printf("moved '%s' -> '%s'\n", src, dst);
 
     res = 1;
  closeall:
